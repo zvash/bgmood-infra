@@ -1,0 +1,7 @@
+bgmood-api-gateway
+bgmood-file-service
+bgmood-protos
+bgmood-auth-service
+bgmood-notification-service
+bgmood-circles-service
+grpc-client

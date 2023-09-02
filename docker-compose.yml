@@ -1,0 +1,105 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_DB=bgmood_auth
+    ports:
+      - "54321:5432"
+    networks:
+      - bgmood
+
+  redis:
+    image: redis:7.0-alpine
+    networks:
+      - bgmood
+
+  auth:
+    build:
+      context: ./bgmood-auth-service
+      dockerfile: Dockerfile
+    container_name: auth
+    hostname: auth
+    environment:
+      - DB_SOURCE=postgresql://root:123@postgres:5432/bgmood_auth?sslmode=disable
+      - REDIS_ADDRESS=redis:6379
+    depends_on:
+      - postgres
+      - redis
+    entrypoint:
+      [
+        "/app/wait-for.sh",
+        "postgres:5432",
+        "--",
+        "/app/wait-for.sh",
+        "redis:6379",
+        "--",
+        "/app/start.sh"
+      ]
+    command: [ "/app/main" ]
+    networks:
+      - bgmood
+
+  notification:
+    build:
+      context: ./bgmood-notification-service
+      dockerfile: Dockerfile
+    container_name: notification
+    hostname: notification
+    environment:
+      - REDIS_ADDRESS=redis:6379
+    depends_on:
+      - redis
+    entrypoint:
+      [
+        "/app/wait-for.sh",
+        "redis:6379",
+        "--",
+        "/app/start.sh"
+      ]
+    command: [ "/app/main" ]
+    networks:
+      - bgmood
+
+  file:
+    build:
+      context: ./bgmood-file-service
+      dockerfile: Dockerfile
+    container_name: file
+    hostname: file
+    entrypoint:
+      [
+        "/app/start.sh"
+      ]
+    command: [ "/app/main" ]
+    networks:
+      - bgmood
+
+  api:
+    build:
+      context: ./bgmood-api-gateway
+      dockerfile: Dockerfile
+    container_name: api
+    hostname: api
+    environment:
+      - AUTH_SERVICE_GRPC_SERVER_ADDRESS=auth:9091
+      - FILE_SERVICE_GRPC_SERVER_ADDRESS=file:9093
+    depends_on:
+      - auth
+      - file
+    entrypoint:
+      [
+        "/app/start.sh"
+      ]
+    command: [ "/app/main" ]
+    ports:
+      - "9090:9090"
+    networks:
+      - bgmood
+
+
+networks:
+  bgmood:
+    driver: bridge
