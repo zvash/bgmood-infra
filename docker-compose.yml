@@ -2,10 +2,12 @@ version: "3.9"
 services:
   postgres:
     image: postgres:15-alpine
+    volumes:
+      - ./create-multiple-postgresql-databases:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=123
-      - POSTGRES_DB=bgmood_auth
+      - POSTGRES_MULTIPLE_DATABASES=bgmood_auth,bgmood_circles
     ports:
       - "54321:5432"
     networks:
@@ -44,7 +46,7 @@ services:
 
   circle:
     build:
-      context: ./bgmood-circle-service
+      context: ./bgmood-circles-service
       dockerfile: Dockerfile
     container_name: circle
     hostname: circle
@@ -111,10 +113,12 @@ services:
     hostname: api
     environment:
       - AUTH_SERVICE_GRPC_SERVER_ADDRESS=auth:9091
+      - CIRCLE_SERVICE_GRPC_SERVER_ADDRESS=circle:9092
       - FILE_SERVICE_GRPC_SERVER_ADDRESS=file:9093
     depends_on:
       - auth
       - file
+      - circle
     entrypoint:
       [
         "/app/start.sh"
