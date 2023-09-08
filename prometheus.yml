@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:8999']
+
+  - job_name: 'postgres-auth'
+    static_configs:
+      - targets: ['postgres_auth_exporter:9187']
+  
+  - job_name: 'postgres-circles'
+    static_configs:
+      - targets: ['postgres_circles_exporter:9187']
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis_exporter:9121']
