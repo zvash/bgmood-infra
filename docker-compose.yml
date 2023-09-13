@@ -143,6 +143,8 @@ services:
       - notification
       - postgres
       - redis
+    ports:
+      - "9089:9090"
     networks:
     - bgmood
 
